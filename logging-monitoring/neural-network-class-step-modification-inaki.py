@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 # Add verbosity to see when running the progress
-tf.logging.set_verbosity(tf.logging.INFO)
+# tf.logging.set_verbosity(tf.logging.INFO)
 
 
 # Data sets
@@ -45,10 +45,24 @@ def main():
   feature_columns = [tf.contrib.layers.real_valued_column("", dimension=4)]
 
   # Build 3 layer DNN with 10, 20, 10 units respectively.
-  classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,
-                                              hidden_units=[10, 20, 10],
-                                              n_classes=3,
-                                              model_dir="/tmp/iris_model")
+  # classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,
+  #                                             hidden_units=[10, 20, 10],
+  #                                             n_classes=3,
+  #                                             model_dir="/tmp/iris_model")
+
+  classifier = tf.contrib.learn.DNNClassifier(
+    feature_columns=feature_columns,
+    hidden_units=[10, 20, 10],
+    n_classes=3,
+    model_dir="/tmp/iris_model",
+    config=tf.contrib.learn.RunConfig(save_checkpoints_secs=1))
+
+  # monitor every 50 steps the test data
+  validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
+    test_set.data,
+    test_set.target,
+    every_n_steps=50)
+
   # Define the training inputs
   def get_train_inputs():
     x = tf.constant(training_set.data)
@@ -57,7 +71,10 @@ def main():
     return x, y
 
   # Fit model.
-  classifier.fit(input_fn=get_train_inputs, steps=2000)
+  # classifier.fit(input_fn=get_train_inputs, steps=2000)
+  classifier.fit(input_fn=get_train_inputs,
+               steps=2000,
+               monitors=[validation_monitor])
 
   # Define the test inputs
   def get_test_inputs():

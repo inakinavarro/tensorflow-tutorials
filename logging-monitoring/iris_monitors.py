@@ -42,22 +42,22 @@ def main(unused_argv):
           tf.contrib.learn.MetricSpec(
               metric_fn=tf.contrib.metrics.streaming_accuracy,
               prediction_key=
-              tf.contrib.learn.prediction_key.PredictionKey.CLASSES),
+              tf.contrib.learn.PredictionKey.CLASSES),
       "precision":
           tf.contrib.learn.MetricSpec(
               metric_fn=tf.contrib.metrics.streaming_precision,
               prediction_key=
-              tf.contrib.learn.prediction_key.PredictionKey.CLASSES),
+              tf.contrib.learn.PredictionKey.CLASSES),
       "recall":
           tf.contrib.learn.MetricSpec(
               metric_fn=tf.contrib.metrics.streaming_recall,
               prediction_key=
-              tf.contrib.learn.prediction_key.PredictionKey.CLASSES)
+              tf.contrib.learn.PredictionKey.CLASSES)
   }
   validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
       test_set.data,
       test_set.target,
-      every_n_steps=50,
+      every_n_steps=5,
       metrics=validation_metrics,
       early_stopping_metric="loss",
       early_stopping_metric_minimize=True,
@@ -80,7 +80,7 @@ def main(unused_argv):
   validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
       test_set.data,
       test_set.target,
-      every_n_steps=50,
+      every_n_steps=5,
       metrics=validation_metrics,
       early_stopping_metric="loss",
       early_stopping_metric_minimize=True,
@@ -94,15 +94,31 @@ def main(unused_argv):
       model_dir="/tmp/iris_model",
       config=tf.contrib.learn.RunConfig(save_checkpoints_secs=1))
 
+  def get_train_inputs():
+    x = tf.constant(training_set.data)
+    y = tf.constant(training_set.target)
+    return x, y
+
   # Fit model.
-  classifier.fit(x=training_set.data,
-                 y=training_set.target,
+  classifier.fit(input_fn=get_train_inputs,
                  steps=2000,
                  monitors=[validation_monitor])
 
   # Evaluate accuracy.
-  accuracy_score = classifier.evaluate(
-      x=test_set.data, y=test_set.target)["accuracy"]
+  def get_test_inputs():
+    x = tf.constant(test_set.data)
+    y = tf.constant(test_set.target)
+
+    return x, y
+
+  # Evaluate accuracy.
+  accuracy_score = classifier.evaluate(input_fn=get_test_inputs,
+                                       steps=1)["accuracy"]
+
+  # accuracy_score = classifier.evaluate(
+  #     x=test_set.data, y=test_set.target)["accuracy"]
+  # accuracy_score = classifier.evaluate(
+  #     x=test_set.data, y=test_set.target)["accuracy"]
   print("Accuracy: {0:f}".format(accuracy_score))
 
   # Classify two new flower samples.
